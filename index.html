@@ -1,0 +1,861 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JASL - Jameel Akthar Space Station</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Three.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
+    <!-- GLTFLoader -->
+    <script src="https://unpkg.com/three@0.134.0/examples/js/loaders/GLTFLoader.js"></script>
+    <!-- GSAP and ScrollTrigger -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700;900&family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: #000;
+            color: #fff;
+            overflow-x: hidden;
+            height: auto;
+            min-height: 100vh;
+            cursor: none;
+        }
+
+        .cursor {
+            position: fixed;
+            width: 12px;
+            height: 12px;
+            background: #fff;
+            border-radius: 50%;
+            pointer-events: none;
+            transform: translate(-50%, -50%);
+            z-index: 1000;
+            box-shadow: 0 0 16px rgba(255, 255, 255, 0.4);
+            transition: transform 0.1s ease;
+        }
+
+        .cursor::before {
+            content: '';
+            position: absolute;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #FFCCF2, #977DFF, #0033FF);
+            opacity: 0.5;
+            transform: translate(-50%, -50%);
+            z-index: -1;
+            box-shadow: 0 0 12px rgba(151, 125, 255, 0.3), 0 0 24px rgba(0, 51, 255, 0.2);
+            animation: pulse 2.5s infinite ease-in-out;
+        }
+
+        @keyframes pulse {
+            0% { transform: translate(-50%, -50%) scale(1); opacity: 0.5; }
+            50% { transform: translate(-50%, -50%) scale(1.3); opacity: 0.7; }
+            100% { transform: translate(-50%, -50%) scale(1); opacity: 0.5; }
+        }
+
+        .cursor-trail {
+            position: fixed;
+            pointer-events: none;
+            z-index: 999;
+        }
+
+        .cursor-star {
+            width: 100%;
+            height: 100%;
+            clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
+        }
+
+        .glassmorphic {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-radius: 16px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 6px 24px rgba(0, 0, 0, 0.2);
+        }
+
+        .cosmic-gradient {
+            background: linear-gradient(45deg, #FFCCF2, #977DFF, #0033FF, #0033FF);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            text-fill-color: transparent;
+            text-shadow: 0 0 8px rgba(151, 125, 255, 0.4), 0 0 16px rgba(0, 51, 255, 0.2);
+        }
+
+        h1, h2, h3 {
+            font-family: 'Montserrat', sans-serif;
+        }
+
+        .fancy-title {
+            font-family: 'Montserrat', sans-serif;
+            font-weight: 900;
+            font-size: clamp(2.5rem, 8vw, 7rem);
+            letter-spacing: -1.5px;
+            line-height: 0.95;
+            margin-bottom: 1.5rem;
+            text-align: center;
+            transform: perspective(400px) translateZ(0);
+            transition: transform 0.4s ease;
+        }
+
+        .fancy-title:hover {
+            transform: perspective(400px) translateZ(15px);
+        }
+
+        h2 { font-size: clamp(1.3rem, 2.5vw, 2.2rem); }
+        h3 { font-size: clamp(1.1rem, 1.8vw, 1.6rem); }
+        p { line-height: 1.7; letter-spacing: 0.4px; }
+
+        .btn {
+            background: linear-gradient(45deg, #FFCCF2, #977DFF, #0033FF, #0033FF);
+            color: #fff;
+            font-weight: 600;
+            padding: 0.6rem 1.8rem;
+            border-radius: 40px;
+            border: none;
+            cursor: none;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 16px rgba(151, 125, 255, 0.3);
+        }
+
+        .skill-bar {
+            height: 6px;
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 3px;
+            overflow: hidden;
+        }
+
+        .skill-progress { height: 100%; background: linear-gradient(45deg, #FFCCF2, #977DFF, #0033FF); }
+
+        .project-card { transition: transform 0.2s ease; }
+        .project-card:hover { transform: translateY(-4px); }
+
+        .section {
+            min-height: 100vh;
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 2rem;
+            position: relative;
+        }
+
+        .card {
+            width: 100%;
+            max-width: 960px;
+            padding: 3rem;
+            visibility: hidden;
+            min-height: auto;
+        }
+
+        .scroll-indicator {
+            animation: bounce 2.5s infinite;
+            position: absolute;
+            bottom: 1.5rem;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 10;
+        }
+
+        @keyframes bounce {
+            0%, 20%, 50%, 80%, 100% { transform: translateY(0) translateX(-50%); }
+            40% { transform: translateY(-8px) translateX(-50%); }
+            60% { transform: translateY(-4px) translateX(-50%); }
+        }
+
+        @media (max-width: 768px) {
+            .card {
+                padding: 1.5rem;
+                max-width: 90%;
+            }
+            .cursor::before { width: 20px; height: 20px; }
+        }
+
+        @media (max-width: 640px) {
+            .card { padding: 1.5rem; }
+            .cursor::before { width: 20px; height: 20px; }
+        }
+    </style>
+</head>
+<body>
+    <!-- Three.js Canvas for Space Travel Animation -->
+    <div id="canvas-container" class="fixed inset-0 z-0"></div>
+
+    <!-- DOM-Based Cursor -->
+    <div class="cursor"></div>
+
+    <!-- Main Content -->
+    <div class="relative z-10">
+        <!-- Hero Section -->
+        <section class="section">
+            <div class="card glassmorphic text-center">
+                <h1 class="fancy-title cosmic-gradient">JAMEEL AKTHAR</h1>
+                <p class="text-base mb-5">Creative Developer & Designer</p>
+                <div class="flex justify-center gap-3">
+                    <a href="#projects" class="btn">View My Work</a>
+                    <a href="#contact" class="btn">Contact Me</a>
+                </div>
+            </div>
+            <div class="scroll-indicator">
+                <div class="w-3 h-6 border-2 border-white rounded-full flex items-start justify-center">
+                    <div class="w-1 h-1.5 bg-white rounded-full mt-1"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- About Section -->
+        <section id="about" class="section">
+            <div class="card glassmorphic">
+                <h2 class="text-xl mb-5 border-b border-white/20 pb-1.5 cosmic-gradient">About Me</h2>
+                <p class="mb-5 text-sm">Hello! I’m Jameel Akthar, a passionate creative developer with a keen eye for design and a love for building immersive digital experiences. I blend technical expertise with artistic vision to create memorable and engaging projects.</p>
+                <p class="mb-5 text-sm">With several years of experience in the industry, I’ve worked on a diverse range of projects from interactive websites to complex web applications. I’m constantly exploring new technologies and techniques to push the boundaries of what’s possible on the web.</p>
+                <h3 class="text-lg mb-3 cosmic-gradient">My Skills</h3>
+                <div class="space-y-3">
+                    <div>
+                        <p class="mb-1 text-sm">Frontend Development - <span>90%</span></p>
+                        <div class="skill-bar">
+                            <div class="skill-progress" style="width: 0%;" data-width="90%"></div>
+                        </div>
+                    </div>
+                    <div>
+                        <p class="mb-1 text-sm">UI/UX Design - <span>85%</span></p>
+                        <div class="skill-bar">
+                            <div class="skill-progress" style="width: 0%;" data-width="85%"></div>
+                        </div>
+                    </div>
+                    <div>
+                        <p class="mb-1 text-sm">3D & Animation - <span>80%</span></p>
+                        <div class="skill-bar">
+                            <div class="skill-progress" style="width: 0%;" data-width="80%"></div>
+                        </div>
+                    </div>
+                    <div>
+                        <p class="mb-1 text-sm">Backend Development - <span>75%</span></p>
+                        <div class="skill-bar">
+                            <div class="skill-progress" style="width: 0%;" data-width="75%"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Projects Section -->
+        <section id="projects" class="section">
+            <div class="card glassmorphic">
+                <h2 class="text-xl mb-5 border-b border-white/20 pb-1.5 cosmic-gradient">Featured Projects</h2>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                    <div class="project-card glassmorphic p-3 rounded-lg">
+                        <div class="h-36 rounded-lg mb-3" style="background: linear-gradient(135deg, #FFCCF2, #977DFF, #0033FF);"></div>
+                        <h3 class="text-base font-semibold mb-1.5 cosmic-gradient">Immersive Web Experience</h3>
+                        <p class="text-xs mb-2">An interactive 3D website with WebGL animations and dynamic content loading.</p>
+                        <div class="flex flex-wrap gap-1.5">
+                            <span class="text-xs bg-gray-700 px-1.5 py-0.5 rounded">Three.js</span>
+                            <span class="text-xs bg-gray-700 px-1.5 py-0.5 rounded">GSAP</span>
+                            <span class="text-xs bg-gray-700 px-1.5 py-0.5 rounded">React</span>
+                        </div>
+                    </div>
+                    <div class="project-card glassmorphic p-3 rounded-lg">
+                        <div class="h-36 rounded-lg mb-3" style="background: linear-gradient(135deg, #FFCCF2, #977DFF, #0033FF);"></div>
+                        <h3 class="text-base font-semibold mb-1.5 cosmic-gradient">E-Commerce Platform</h3>
+                        <p class="text-xs mb-2">A modern shopping experience with smooth animations and intuitive UI.</p>
+                        <div class="flex flex-wrap gap-1.5">
+                            <span class="text-xs bg-gray-700 px-1.5 py-0.5 rounded">Next.js</span>
+                            <span class="text-xs bg-gray-700 px-1.5 py-0.5 rounded">Tailwind</span>
+                            <span class="text-xs bg-gray-700 px-1.5 py-0.5 rounded">Stripe</span>
+                        </div>
+                    </div>
+                    <div class="project-card glassmorphic p-3 rounded-lg">
+                        <div class="h-36 rounded-lg mb-3" style="background: linear-gradient(135deg, #FFCCF2, #977DFF, #0033FF);"></div>
+                        <h3 class="text-base font-semibold mb-1.5 cosmic-gradient">Interactive Dashboard</h3>
+                        <p class="text-xs mb-2">Data visualization platform with real-time updates and custom widgets.</p>
+                        <div class="flex flex-wrap gap-1.5">
+                            <span class="text-xs bg-gray-700 px-1.5 py-0.5 rounded">Vue.js</span>
+                            <span class="text-xs bg-gray-700 px-1.5 py-0.5 rounded">D3.js</span>
+                            <span class="text-xs bg-gray-700 px-1.5 py-0.5 rounded">Firebase</span>
+                        </div>
+                    </div>
+                    <div class="project-card glassmorphic p-3 rounded-lg">
+                        <div class="h-36 rounded-lg mb-3" style="background: linear-gradient(135deg, #FFCCF2, #977DFF, #0033FF);"></div>
+                        <h3 class="text-base font-semibold mb-1.5 cosmic-gradient">Mobile App Design</h3>
+                        <p class="text-xs mb-2">Fitness tracking app with gamification elements and social features.</p>
+                        <div class="flex flex-wrap gap-1.5">
+                            <span class="text-xs bg-gray-700 px-1.5 py-0.5 rounded">Figma</span>
+                            <span class="text-xs bg-gray-700 px-1.5 py-0.5 rounded">React Native</span>
+                            <span class="text-xs bg-gray-700 px-1.5 py-0.5 rounded">Redux</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="flex justify-center mt-5">
+                    <a href="#" class="btn">View All Projects</a>
+                </div>
+            </div>
+        </section>
+
+        <!-- Contact Section -->
+        <section id="contact" class="section">
+            <div class="card glassmorphic">
+                <h2 class="text-xl mb-5 border-b border-white/20 pb-1.5 cosmic-gradient">Get In Touch</h2>
+                <p class="mb-5 text-sm">Have a project in mind or want to collaborate? Feel free to reach out!</p>
+                <div class="space-y-3">
+                    <div class="flex flex-col sm:flex-row gap-3">
+                        <input type="text" placeholder="Your Name" class="flex-1 glassmorphic p-2.5 rounded-lg focus:outline-none focus:ring-1.5 focus:ring-white" />
+                        <input type="email" placeholder="Your Email" class="flex-1 glassmorphic p-2.5 rounded-lg focus:outline-none focus:ring-1.5 focus:ring-white" />
+                    </div>
+                    <input type="text" placeholder="Subject" class="w-full glassmorphic p-2.5 rounded-lg focus:outline-none focus:ring-1.5 focus:ring-white" />
+                    <textarea placeholder="Message" rows="4" class="w-full glassmorphic p-2.5 rounded-lg focus:outline-none focus:ring-1.5 focus:ring-white"></textarea>
+                    <button class="btn w-full sm:w-auto">Send Message</button>
+                </div>
+                <div class="mt-6">
+                    <h3 class="text-lg mb-3 cosmic-gradient">Connect With Me</h3>
+                    <div class="flex justify-center gap-3">
+                        <a href="#" class="text-white hover:scale-105 transition-transform"><svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.761 0 5-2.239 5-5v-14c0-2.761-2.239-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-1.337-.027-3.063-1.867-3.063-1.872 0-2.159 1.462-2.159 2.971v5.696h-3v-11h2.884v1.497h.041c.402-.764 1.377-1.572 2.828-1.572 3.023 0 3.583 1.986 3.583 4.567v6.508z"/></svg></a>
+                        <a href="#" class="text-white hover:scale-105 transition-transform"><svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M24 4.557c-.883.392-1.832.656-2.828.775 1.017-.609 1.798-1.574 2.165-2.724-.951.564-2.005.974-3.127 1.195-.897-.957-2.178-1.555-3.594-1.555-2.717 0-4.92 2.203-4.92 4.917 0 .39.045.765.127 1.124-4.09-.205-7.719-2.165-10.148-5.144-.424.722-.666 1.561-.666 2.457 0 1.695.869 3.188 2.188 4.066-.806-.026-1.566-.247-2.229-.616v.061c0 2.367 1.684 4.342 3.919 4.789-.41.111-.843.171-1.287.171-.314 0-.621-.03-.921-.086.622 1.943 2.426 3.357 4.565 3.396-1.674 1.311-3.781 2.092-6.071 2.092-.394 0-.787-.022-1.173-.065 2.179 1.396 4.768 2.209 7.557 2.209 9.054 0 14.002-7.496 14.002-13.986 0-.209 0-.42-.015-.63.961-.689 1.8-1.56 2.46-2.548l-.047-.02z"/></svg></a>
+                        <a href="#" class="text-white hover:scale-105 transition-transform"><svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M12 0c-6.627 0-12 5.373-12 12s5.373 12 12 12 12-5.373 12-12-5.373-12-12-12zm0 2c5.514 0 10 4.486 10 10s-4.486 10-10 10-10-4.486-10-10 4.486-10 10-10zm0 4c-3.309 0-6 2.691-6 6s2.691 6 6 6 6-2.691 6-6-2.691-6-6-6zm0 2c2.206 0 4 1.794 4 4s-1.794 4-4 4-4-1.794-4-4 1.794-4 4-4z"/></svg></a>
+                        <a href="#" class="text-white hover:scale-105 transition-transform"><svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M12 0c-6.627 0-12 5.373-12 12s5.373 12 12 12 12-5.373 12-12-5.373-12-12-12zm5.123 17.836c-.359.607-.996 1.054-1.723 1.267-1.066.312-2.134.16-3.2-.089-1.337-.312-2.674-.855-3.912-1.512-2.585-1.378-4.8-3.2-6.4-5.512-1.6-2.312-2.134-4.8-1.6-7.467.267-1.378.934-2.489 1.956-3.2.623-.432 1.334-.623 2.045-.534.356.045.667.267.845.623.534 1.067.979 2.178 1.423 3.289.178.445.312.934.356 1.423.044.489-.089.979-.356 1.423-.267.445-.667.756-1.156.845-.489.089-.934-.044-1.245-.356-.756-.756-1.467-1.556-2.134-2.4-.667-.845-1.245-1.734-1.778-2.667-.089-.178-.133-.356-.089-.534.044-.178.178-.312.356-.356.534-.133 1.067-.044 1.556.267.489.312 1.022.756 1.512 1.245.934.934 1.912 1.912 2.934 2.756.445.356.934.534 1.467.489.534-.044 1.022-.312 1.378-.756.356-.445.623-.934.756-1.467.133-.534.044-1.067-.267-1.512-.312-.445-.756-.756-1.245-.845-.489-.089-.979-.044-1.423.178-.445.222-.845.534-1.156.934-.312.4-.534.845-.667 1.334-.133.489-.089 1.022.133 1.467.222.445.623.845 1.067 1.067 1.334.667 2.756 1.156 4.178 1.512.623.178 1.245.312 1.867.356.623.044 1.245-.089 1.734-.356.489-.267.845-.667 1.067-1.156.222-.489.267-1.022.133-1.512-.133-.489-.445-.934-.845-1.245-.4-.312-.845-.534-1.334-.667-.489-.133-1.022-.089-1.467.133-.445.222-.845.623-1.067 1.067-.222.445-.267.934-.133 1.423.133.489.445.934.845 1.245.4.312.845.534 1.334.667.489.133 1.022.089 1.467-.133.445-.222.845-.623 1.067-1.067z"/></svg></a>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <!-- JavaScript -->
+    <script>
+        // Utility: Debounce function
+        function debounce(func, wait) {
+            let timeout;
+            return function executedFunction(...args) {
+                const later = () => {
+                    clearTimeout(timeout);
+                    func(...args);
+                };
+                clearTimeout(timeout);
+                timeout = setTimeout(later, wait);
+            };
+        }
+
+        // Three.js Space Travel Animation
+        let scene, camera, renderer, stars = [], spaceships = [], spaceStation, rocketModels = [], blackModel, blackMixer;
+        let mouseX = 0, mouseY = 0;
+        let spawnIntervals = []; // Track intervals for cleanup
+
+        function initThreeJS() {
+            scene = new THREE.Scene();
+            camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 3000);
+            camera.position.z = 1;
+            renderer = new THREE.WebGLRenderer({ alpha: true });
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setClearColor(0x000000, 1);
+            document.getElementById('canvas-container').appendChild(renderer.domElement);
+            createStars();
+            loadModels();
+            window.addEventListener('resize', debounce(onWindowResize, 100));
+            document.addEventListener('mousemove', onMouseMove);
+            spawnSpaceships();
+            initSpaceStation();
+            animateThreeJS();
+        }
+
+        function createStars() {
+            const starCount = 3000;
+            const geometry = new THREE.BufferGeometry();
+            const positions = new Float32Array(starCount * 3);
+            const sizes = new Float32Array(starCount);
+            const colors = new Float32Array(starCount * 3);
+            
+            for (let i = 0; i < starCount; i++) {
+                const radius = Math.random() * 100 + 50;
+                const angle = Math.random() * Math.PI * 2;
+                const x = Math.cos(angle) * radius;
+                const y = Math.sin(angle) * radius;
+                const z = Math.random() * 2000 - 1000;
+                positions[i * 3] = x;
+                positions[i * 3 + 1] = y;
+                positions[i * 3 + 2] = z;
+                sizes[i] = Math.random() * 2 + 0.5;
+                let color;
+                const rand = Math.random();
+                if (rand < 0.25) {
+                    color = new THREE.Color(Math.random(), Math.random(), Math.random());
+                } else {
+                    color = new THREE.Color(1, 1, 1);
+                }
+                colors[i * 3] = color.r;
+                colors[i * 3 + 1] = color.g;
+                colors[i * 3 + 2] = color.b;
+                stars.push({ x, y, z, size: sizes[i], speed: Math.random() * 0.2 + 0.1, color });
+            }
+            
+            geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+            geometry.setAttribute('size', new THREE.BufferAttribute(sizes, 1));
+            geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+            
+            const material = new THREE.ShaderMaterial({
+                uniforms: { pointTexture: { value: createCircleTexture() }, time: { value: 0.0 } },
+                vertexShader: `
+                    attribute float size;
+                    attribute vec3 color;
+                    varying vec3 vColor;
+                    void main() {
+                        vColor = color;
+                        vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
+                        gl_PointSize = size * (300.0 / -mvPosition.z);
+                        gl_Position = projectionMatrix * mvPosition;
+                    }
+                `,
+                fragmentShader: `
+                    uniform sampler2D pointTexture;
+                    uniform float time;
+                    varying vec3 vColor;
+                    void main() {
+                        vec2 uv = gl_PointCoord;
+                        vec4 texColor = texture2D(pointTexture, uv);
+                        float glow = sin(time * 2.0) * 0.5 + 0.5;
+                        vec3 finalColor = vColor;
+                        if (vColor.r != vColor.g || vColor.g != vColor.b) {
+                            finalColor = vColor * (1.0 + glow * 0.3);
+                        } else if (vColor.r > 0.99) {
+                            finalColor = vColor * (1.0 + glow * 0.5);
+                        }
+                        gl_FragColor = vec4(finalColor, texColor.a);
+                    }
+                `,
+                transparent: true,
+                alphaTest: 0.5
+            });
+            
+            const starField = new THREE.Points(geometry, material);
+            scene.add(starField);
+        }
+
+        function createCircleTexture() {
+            const size = 32;
+            const canvas = document.createElement('canvas');
+            canvas.width = size;
+            canvas.height = size;
+            const context = canvas.getContext('2d');
+            context.beginPath();
+            context.arc(size / 2, size / 2, size / 2, 0, Math.PI * 2);
+            context.fillStyle = '#ffffff';
+            context.fill();
+            return new THREE.CanvasTexture(canvas);
+        }
+
+        function loadModels() {
+            if (!THREE.GLTFLoader) {
+                console.error('GLTFLoader is not available.');
+                for (let i = 0; i < 4; i++) {
+                    const geometry = new THREE.BoxGeometry(5, 5, 10);
+                    const material = new THREE.MeshBasicMaterial({ color: 0x888888, transparent: true, opacity: 0 });
+                    rocketModels[i] = new THREE.Mesh(geometry, material);
+                }
+                const spaceStationGeometry = new THREE.SphereGeometry(20, 32, 16);
+                const spaceStationMaterial = new THREE.MeshBasicMaterial({ color: 0xaaaaaa, wireframe: true, transparent: true, opacity: 0 });
+                spaceStation = new THREE.Mesh(spaceStationGeometry, spaceStationMaterial);
+                spaceStation.position.set(-150, 0, -1000);
+                scene.add(spaceStation);
+                const blackGeometry = new THREE.BoxGeometry(5, 5, 5);
+                const blackMaterial = new THREE.MeshBasicMaterial({ color: 0x000000 });
+                blackModel = new THREE.Mesh(blackGeometry, blackMaterial);
+                blackModel.position.set(-300, 150, -400);
+                scene.add(blackModel);
+                return;
+            }
+
+            const loader = new THREE.GLTFLoader();
+            const rocketFiles = [
+                './models/rocket1.glb',
+                './models/rocket2.glb',
+                './models/rocket3.glb',
+                './models/rocket4.glb'
+            ];
+            
+            rocketFiles.forEach((file, index) => {
+                loader.load(
+                    file,
+                    (gltf) => {
+                        const model = gltf.scene;
+                        model.scale.set(5, 5, 5);
+                        model.traverse((child) => {
+                            if (child.isMesh) {
+                                child.material.transparent = true;
+                                child.material.opacity = 0;
+                            }
+                        });
+                        rocketModels[index] = model;
+                        console.log(`Rocket${index + 1} loaded successfully`);
+                    },
+                    undefined,
+                    (error) => {
+                        console.error(`Error loading rocket${index + 1} model: ${file}`, error);
+                        const geometry = new THREE.BoxGeometry(5, 5, 10);
+                        const material = new THREE.MeshBasicMaterial({ color: 0x888888, transparent: true, opacity: 0 });
+                        rocketModels[index] = new THREE.Mesh(geometry, material);
+                    }
+                );
+            });
+            
+            loader.load(
+                './models/spacestation.glb',
+                (gltf) => {
+                    spaceStation = gltf.scene;
+                    spaceStation.scale.set(20, 20, 20);
+                    spaceStation.position.set(-150, 0, -1000);
+                    spaceStation.rotation.set(Math.random() * Math.PI, Math.random() * Math.PI, Math.random() * Math.PI);
+                    spaceStation.traverse((child) => {
+                        if (child.isMesh) {
+                            child.material.transparent = true;
+                            child.material.opacity = 0;
+                        }
+                    });
+                    scene.add(spaceStation);
+                    console.log('Space Station loaded successfully');
+                },
+                undefined,
+                (error) => {
+                    console.error('Error loading space station model: ./models/spacestation.glb', error);
+                    const geometry = new THREE.SphereGeometry(20, 32, 16);
+                    const material = new THREE.MeshBasicMaterial({ color: 0xaaaaaa, wireframe: true, transparent: true, opacity: 0 });
+                    spaceStation = new THREE.Mesh(geometry, material);
+                    spaceStation.position.set(-150, 0, -1000);
+                    scene.add(spaceStation);
+                }
+            );
+
+            loader.load(
+                './models/blackhole.glb',
+                (gltf) => {
+                    blackModel = gltf.scene;
+                    blackModel.scale.set(15, 15, 15);
+                    blackModel.position.set(-300, 150, -400);
+                    blackModel.rotation.set(0, Math.PI / 4, 0);
+                    scene.add(blackModel);
+                    console.log('Black model loaded successfully');
+                    if (gltf.animations && gltf.animations.length > 0) {
+                        blackMixer = new THREE.AnimationMixer(blackModel);
+                        gltf.animations.forEach((clip) => {
+                            blackMixer.clipAction(clip).play();
+                        });
+                    }
+                },
+                undefined,
+                (error) => {
+                    console.error('Error loading black model: ./models/blackhole.glb', error);
+                    const geometry = new THREE.BoxGeometry(5, 5, 5);
+                    const material = new THREE.MeshBasicMaterial({ color: 0x000000 });
+                    blackModel = new THREE.Mesh(geometry, material);
+                    blackModel.position.set(-300, 150, -400);
+                    scene.add(blackModel);
+                }
+            );
+        }
+
+        function spawnSpaceships() {
+            const corners = [
+                { x: -200, y: 150, z: 1000 },
+                { x: 200, y: 150, z: 1000 },
+                { x: -200, y: -150, z: 1000 },
+                { x: 200, y: -150, z: 1000 }
+            ];
+            
+            function createSpaceship(cornerIndex) {
+                if (rocketModels.length === 0) return;
+                const corner = corners[cornerIndex];
+                const modelIndex = Math.floor(Math.random() * rocketModels.length);
+                const spaceship = rocketModels[modelIndex].clone();
+                spaceship.position.set(corner.x, corner.y, corner.z);
+                spaceship.rotation.set(Math.random() * Math.PI * 0.2, Math.random() * Math.PI * 0.2, Math.PI);
+                spaceship.userData = { speed: Math.random() * 2 + 1, startZ: 1000, endZ: -1000 };
+                scene.add(spaceship);
+                spaceships.push(spaceship);
+            }
+            
+            // Clear any existing intervals
+            spawnIntervals.forEach(interval => clearInterval(interval));
+            spawnIntervals = [];
+
+            // Start spawning one rocket per corner every 5 seconds, staggered
+            corners.forEach((_, index) => {
+                setTimeout(() => {
+                    createSpaceship(index);
+                    const interval = setInterval(() => createSpaceship(index), 5000);
+                    spawnIntervals.push(interval);
+                }, index * 1000); // Stagger by 1 second per corner
+            });
+        }
+
+        function initSpaceStation() {
+            if (spaceStation) {
+                spaceStation.userData = { speed: 0.05, startZ: -1000, endZ: 1000 };
+            }
+        }
+
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        function onMouseMove(event) {
+            mouseX = (event.clientX / window.innerWidth) * 2 - 1;
+            mouseY = -(event.clientY / window.innerHeight) * 2 + 1;
+            const cursor = document.querySelector('.cursor');
+            cursor.style.left = `${event.clientX}px`;
+            cursor.style.top = `${event.clientY}px`;
+            const mouseVelocityX = event.clientX - prevMouseX;
+            const mouseVelocityY = event.clientY - prevMouseY;
+            prevMouseX = event.clientX;
+            prevMouseY = event.clientY;
+            const speed = Math.sqrt(mouseVelocityX * mouseVelocityX + mouseVelocityY * mouseVelocityY);
+            const particleCount = Math.min(Math.floor(speed / 5) + 1, 3);
+            for (let i = 0; i < particleCount; i++) {
+                createMagicTrail(event.clientX, event.clientY, mouseVelocityX, mouseVelocityY, false);
+            }
+        }
+
+        function animateThreeJS() {
+            requestAnimationFrame(animateThreeJS);
+            const starPositions = scene.children[0].geometry.attributes.position.array;
+            const starSizes = scene.children[0].geometry.attributes.size.array;
+            
+            for (let i = 0; i < stars.length; i++) {
+                stars[i].z += stars[i].speed;
+                if (stars[i].z > 1000) {
+                    stars[i].z = -1000;
+                    const radius = Math.random() * 100 + 50;
+                    const angle = Math.random() * Math.PI * 2;
+                    stars[i].x = Math.cos(angle) * radius;
+                    stars[i].y = Math.sin(angle) * radius;
+                }
+                starPositions[i * 3] = stars[i].x;
+                starPositions[i * 3 + 1] = stars[i].y;
+                starPositions[i * 3 + 2] = stars[i].z;
+                const distance = Math.abs(stars[i].z);
+                starSizes[i] = stars[i].z > 0 ? stars[i].size * (1 + stars[i].z / 1000) : stars[i].size;
+            }
+            
+            scene.children[0].geometry.attributes.position.needsUpdate = true;
+            scene.children[0].geometry.attributes.size.needsUpdate = true;
+            scene.children[0].material.uniforms.time.value += 0.016;
+            
+            spaceships.forEach((spaceship, index) => {
+                spaceship.position.z -= spaceship.userData.speed;
+                let opacity;
+                const z = spaceship.position.z;
+                if (z > 500) {
+                    opacity = 1 - (z - 500) / 500;
+                } else if (z > 0) {
+                    opacity = 1;
+                } else {
+                    opacity = z / -1000;
+                }
+                spaceship.traverse((child) => {
+                    if (child.isMesh) child.material.opacity = opacity;
+                });
+                if (spaceship.position.z <= -1000) {
+                    scene.remove(spaceship);
+                    spaceships.splice(index, 1);
+                }
+            });
+            
+            if (spaceStation) {
+                spaceStation.position.z += spaceStation.userData.speed;
+                spaceStation.rotation.y += 0.001;
+                let opacity;
+                const z = spaceStation.position.z;
+                if (z < -500) {
+                    opacity = 1 - (-500 - z) / 500;
+                } else if (z < 0) {
+                    opacity = 1;
+                } else {
+                    opacity = 1 - z / 1000;
+                }
+                spaceStation.traverse((child) => {
+                    if (child.isMesh) child.material.opacity = opacity;
+                });
+                if (spaceStation.position.z >= 1000) {
+                    spaceStation.position.set(-150, 0, -1000);
+                    spaceStation.rotation.set(Math.random() * Math.PI, Math.random() * Math.PI, Math.random() * Math.PI);
+                }
+            }
+            
+            if (blackMixer) blackMixer.update(0.016);
+            if (blackModel) blackModel.position.set(-300, 150, -400);
+
+            camera.position.set(0, 0, 1);
+            camera.lookAt(0, 0, -100);
+            renderer.render(scene, camera);
+        }
+
+        // DOM-Based Cursor
+        const cursor = document.querySelector('.cursor');
+        let cursorTrails = [];
+        const maxTrails = 50;
+        let prevMouseX = 0, prevMouseY = 0;
+
+        const colors = Array.from({ length: 50 }, () => {
+            const rand = Math.random();
+            if (rand < 0.25) {
+                const r = Math.floor(Math.random() * 256);
+                const g = Math.floor(Math.random() * 256);
+                const b = Math.floor(Math.random() * 256);
+                return `rgb(${r}, ${g}, ${b})`;
+            } else if (rand < 0.5) {
+                return 'rgba(255, 255, 255, 0.9)';
+            }
+            return '#fff';
+        });
+
+        function createMagicTrail(x, y, velX, velY, isBurst) {
+            const particle = document.createElement('div');
+            particle.className = 'cursor-trail';
+            const isStarShape = isBurst ? Math.random() < 0.5 : Math.random() < 0.3;
+            const size = Math.random() * 8 + 4;
+            if (isStarShape) {
+                const star = document.createElement('div');
+                star.className = 'cursor-star';
+                particle.appendChild(star);
+            }
+            particle.style.width = `${size}px`;
+            particle.style.height = `${size}px`;
+            const color = colors[Math.floor(Math.random() * colors.length)];
+            if (isStarShape) {
+                particle.firstChild.style.backgroundColor = color;
+            } else {
+                particle.style.backgroundColor = color;
+                particle.style.borderRadius = '50%';
+            }
+            particle.style.boxShadow = `0 0 ${size * 1.5}px ${color}`;
+            particle.style.left = `${x}px`;
+            particle.style.top = `${y}px`;
+            let directionX, directionY, gravity, duration, multiplier;
+            if (isBurst) {
+                const angle = Math.random() * Math.PI * 2;
+                const speed = Math.random() * 12 + 4;
+                directionX = Math.cos(angle) * speed;
+                directionY = Math.sin(angle) * speed;
+                gravity = 30;
+                duration = Math.random() * 800 + 600;
+                multiplier = 8;
+            } else {
+                directionX = velX * (Math.random() * 0.4 + 0.4) + (Math.random() - 0.5) * 4;
+                directionY = velY * (Math.random() * 0.4 + 0.4) + (Math.random() - 0.5) * 4;
+                gravity = 40;
+                duration = Math.random() * 800 + 400;
+                multiplier = 1.5;
+            }
+            document.body.appendChild(particle);
+            cursorTrails.push({ element: particle, startTime: performance.now(), duration, x, y, directionX, directionY, gravity, multiplier });
+            if (cursorTrails.length > maxTrails) {
+                const oldParticle = cursorTrails.shift();
+                oldParticle.element.remove();
+            }
+        }
+
+        function animateTrails() {
+            requestAnimationFrame(animateTrails);
+            const currentTime = performance.now();
+            cursorTrails = cursorTrails.filter(particle => {
+                const progress = (currentTime - particle.startTime) / particle.duration;
+                const easeOut = 1 - progress;
+                if (progress < 1) {
+                    const posX = particle.x + particle.directionX * easeOut * particle.multiplier;
+                    const posY = particle.y + particle.directionY * easeOut * particle.multiplier + easeOut * easeOut * particle.gravity;
+                    particle.element.style.left = `${posX}px`;
+                    particle.element.style.top = `${posY}px`;
+                    particle.element.style.opacity = easeOut;
+                    particle.element.style.transform = `scale(${easeOut})`;
+                    return true;
+                } else {
+                    particle.element.remove();
+                    return false;
+                }
+            });
+        }
+
+        function createParticleBurst(x, y) {
+            const particleCount = 12;
+            for (let i = 0; i < particleCount; i++) {
+                createMagicTrail(x, y, 0, 0, true);
+            }
+        }
+
+        document.addEventListener('mousedown', () => {
+            cursor.style.transform = 'translate(-50%, -50%) scale(0.9)';
+            createParticleBurst(prevMouseX, prevMouseY);
+            setTimeout(() => {
+                cursor.style.transform = 'translate(-50%, -50%) scale(1)';
+            }, 80);
+        });
+
+        function initScrollAnimations() {
+            gsap.registerPlugin(ScrollTrigger);
+            const cards = document.querySelectorAll('.card');
+            cards.forEach((card, index) => {
+                gsap.fromTo(card, 
+                    { 
+                        autoAlpha: 0, 
+                        y: 80 
+                    },
+                    {
+                        autoAlpha: 1,
+                        y: 0,
+                        duration: 1,
+                        ease: "power3.out",
+                        scrollTrigger: {
+                            trigger: card,
+                            start: "top 90%", // Start when top of card hits 90% of viewport height
+                            end: "bottom 10%", // End when bottom of card hits 10% of viewport height
+                            scrub: 0.4,
+                            toggleActions: "play none none reverse" // Play on enter, reverse on leave
+                        }
+                    }
+                );
+            });
+            const skillBars = document.querySelectorAll('.skill-progress');
+            skillBars.forEach(bar => {
+                const width = bar.getAttribute('data-width');
+                gsap.fromTo(bar, 
+                    { width: 0 },
+                    {
+                        width: width,
+                        duration: 1.5,
+                        ease: "power3.out",
+                        scrollTrigger: {
+                            trigger: bar,
+                            start: "top 90%",
+                            toggleActions: "play none none none"
+                        }
+                    }
+                );
+            });
+        }
+
+        // Initialize
+        initThreeJS();
+        initScrollAnimations();
+        animateTrails();
+    </script>
+</body>
+</html>
